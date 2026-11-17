@@ -10,6 +10,49 @@
 // farm plan is the same derivation main.ts writes to board.json, too:
 // category, chains, TVL and age decide the action, the capital, the hold
 // and every cost and time. No name is special-cased anywhere in this file.
+//
+// How the page is put together, for the next reader:
+//
+//   State first. `state` holds the whole interaction: the search text,
+//   the category and chain filters, the watchlist-only toggle, the
+//   pre-token / live-token tab, the sort key and direction, and the
+//   selected protocol. Nothing else is stored anywhere, so a reload
+//   with the same hash rebuilds the same view.
+//
+//   Hash second. readHash() and writeHash() keep the state in the URL
+//   fragment, so a filtered view or an open detail drawer can be
+//   shared as a link, and the browser's back button is not broken by
+//   the single-page rendering. The hash is written with replaceState,
+//   so every keystroke in the search box does not add a history entry.
+//
+//   Rendering third. render() rebuilds the shell from scratch on every
+//   change: header, lede, controls, then the board or the live table,
+//   then the model panel. Rebuilding is cheap at 178 rows, and it
+//   means there is no stale DOM to keep in sync with the state.
+//
+//   Sorting fourth. sortedRows() sorts a copy, never the data itself,
+//   by the chosen key, with the slug as a deterministic tie-break, so
+//   two rows with the same implied value always appear in the same
+//   order. Growth sorts nulls last, age sorts nulls last the other way:
+//   a protocol with no reported growth is not treated as growing, and
+//   a protocol with no listed date is not treated as old.
+//
+//   Detail fifth. openDetail() fills a <dialog> with the row's inputs,
+//   the four multipliers, the recomputed implied value, and the six
+//   farm steps. The dialog is closed with Escape or the Close button,
+//   and closing it clears the selection from the state and the hash.
+//
+//   Accessibility sixth. Every control has a label, every button has
+//   a type, the board rows are focusable and open on Enter or Space,
+//   the dialog has a labelled heading, and the sort headers announce
+//   their direction. The page works with a keyboard alone, and the
+//   skip link at the top of index.html jumps straight to the board.
+//
+//   No network, ever. The page reads window.RADAR from data.js, which
+//   main.ts writes beside it, and nothing else. There is no fetch, no
+//   image, no font and no analytics call, so the page renders the same
+//   offline as it does online, and a reader can save the output
+//   directory and open it from disk.
 (function () {
   'use strict';
 

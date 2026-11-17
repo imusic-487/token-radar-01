@@ -19,6 +19,25 @@
 // outside the output directory, and refuses to write a board the gate
 // would refuse, instead of handing the grader a broken entry.
 //
+// Exit codes, for a script that calls this program:
+//
+//   0  the board, data.js, dashboard, screenshots and dossier were
+//      written, and the summary line was printed to stdout.
+//   1  the model wrote a board the gate refuses, or the screenshots
+//      are fewer than three, misnamed, or not PNG files. The reason
+//      is on stderr, and nothing is written after the failure.
+//   2  there is no snapshot at the input path. The program never
+//      invents a snapshot, and it never falls back to a different
+//      file: a missing input is a missing input, and the caller
+//      should say where the sealed snapshot actually is.
+//
+// Errors are reported on stderr in one line, starting with
+// "token radar: ", so a build log can be grepped for them. The
+// success lines are on stdout, also starting with "token radar: ",
+// so the same grep finds both. No other output is produced: no
+// progress bars, no colour codes, no timestamps that would make
+// two runs differ.
+//
 // Usage:
 //   node main.ts [--input <snapshot.json|directory>] [--output <dir>]
 //   node main.ts --help

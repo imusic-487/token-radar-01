@@ -569,3 +569,57 @@ export function boardIssue(board: BoardRow[], snapshot: Snapshot): string | null
 export function dataScript(radar: RadarData): string {
   return `window.RADAR=${JSON.stringify(radar)};\n`;
 }
+
+/**
+ * One row, explained in plain words, for a reader who wants the story
+ * behind the number rather than the formula.
+ *
+ * The explanation names the four inputs in the order they matter most
+ * for this row: TVL first, because it sets the scale; growth second,
+ * because it is the only input that can move fast; age third, because
+ * it is the quiet evidence that value has piled up with no token
+ * recorded; and chain count last, because it is the smallest of the
+ * four multipliers. A row whose growth multiplier is below one is
+ * shrinking on the week, and the explanation says so rather than
+ * hiding it behind the rank.
+ *
+ * This is a reading aid only: it changes no number, and the board,
+ * the dashboard and the dossier are built without it. It exists so a
+ * human can check a row by eye, without recomputing the arithmetic.
+ */
+export function explainRow(row: BoardRow): string {
+  const growth = row.model.growth_pct;
+  const growthWord = growth > 0 ? `grew ${growth.toFixed(2)}% in the last seven days` : growth < 0 ? `fell ${Math.abs(growth).toFixed(2)}% in the last seven days` : 'was flat in the last seven days';
+  const ageWord =
+    row.age_days === null
+      ? 'its listing date is not recorded'
+      : row.age_days >= 365
+        ? `it has run for ${(row.age_days / 365).toFixed(1)} years with no token on record`
+        : `it has run for ${row.age_days} days with no token on record`;
+  const chainWord = row.chains.length <= 1 ? 'on one chain' : `on ${row.chains.length} chains`;
+  return (
+    `${row.name} is ranked ${row.rank} with an implied value of $${row.implied_value_usd.toLocaleString('en-US')}. ` +
+    `It holds $${row.tvl_usd.toLocaleString('en-US')} of TVL, ${growthWord}, and ${ageWord}, ${chainWord}. ` +
+    `The model scores it at ${row.model.growth_multiplier} for growth, ${row.model.maturity_multiplier} for maturity and ${row.model.breadth_multiplier} for breadth, ` +
+    `on a base multiple of ${row.model.base_multiple}. ` +
+    `That implied value is the entry's estimate, not a price, and it predicts nothing about whether or when a token is issued.`
+  );
+}
+
+/**
+ * The board, summarised for a log line: how many rows, the top row,
+ * and the range the board covers.
+ *
+ * The summary is deliberately short: one line that a human can read
+ * in a build log, with the top protocol named so a wrong snapshot
+ * shows up immediately as a wrong name, not just a wrong count.
+ */
+export function boardSummary(board: BoardRow[]): string {
+  if (board.length === 0) return 'the board is empty';
+  const top = board[0]!;
+  const last = board[board.length - 1]!;
+  return (
+    `${board.length} rows, top ${top.name} at $${top.implied_value_usd.toLocaleString('en-US')}, ` +
+    `last ${last.name} at $${last.implied_value_usd.toLocaleString('en-US')}`
+  );
+}
