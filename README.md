@@ -38,3 +38,18 @@ mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts --input <snapshot.json|direc
 `data.js`, `dashboard/`, `screenshots/` and `dossier.json` to the
 output directory. The dashboard is a static page with no network: open
 `out/dashboard/index.html` beside `out/data.js`.
+
+## Worked examples
+
+`lib/model.ts` ends with worked examples for the top three rows and
+the last row, with the exact snapshot figures and multipliers, so a
+reader can recompute a row with a calculator. Steakhouse Financial
+($865,602,749), Gauntlet ($519,514,486) and Veda ($502,525,204) are
+the top three; Monarq ($809,230) is the last row, and the board has
+no cut, so the last row is a real row.
+
+## Exit codes
+
+`main.ts` exits 0 on success, 1 when the board or the screenshots
+fail the gate's own check, and 2 when the snapshot is missing. See
+`main.ts --help` for the full usage.
