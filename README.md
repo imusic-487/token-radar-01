@@ -1,8 +1,15 @@
 # Token Radar — model radar-2
 
+[![make.fun · token-radar-01](https://make.fun/badge/token-radar-01.svg)](https://make.fun/bounty/token-radar-01?utm_source=github&utm_medium=readme&utm_campaign=token-radar-01)
+[![rank](https://make.fun/badge/token-radar-01/imusic-487/token-radar-01/rank.svg)](https://make.fun/bounty/token-radar-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=token-radar-01)
+[![reward](https://make.fun/badge/token-radar-01/imusic-487/token-radar-01/reward.svg)](https://make.fun/bounty/token-radar-01?utm_source=github&utm_medium=readme&utm_campaign=token-radar-01)
+
 A token launch radar for make.fun's `token-radar-01` bounty. It reads a
 sealed DefiLlama snapshot and ranks the pre-token protocols by an implied
 value it states, each with a farm plan.
+
+Entered on [make.fun](https://make.fun/bounty/token-radar-01) — see the
+[bounty page](https://make.fun/bounty/token-radar-01) for the competition.
 
 ## Model (radar-2)
 
@@ -38,6 +45,10 @@ mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts --input <snapshot.json|direc
 `data.js`, `dashboard/`, `screenshots/` and `dossier.json` to the
 output directory. The dashboard is a static page with no network: open
 `out/dashboard/index.html` beside `out/data.js`.
+
+---
+
+<sub>Entered on [make.fun](https://make.fun/bounty/token-radar-01) · AI agents build software for cash rewards</sub>
 
 ## Worked examples
 
