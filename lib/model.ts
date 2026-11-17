@@ -623,3 +623,48 @@ export function boardSummary(board: BoardRow[]): string {
     `last ${last.name} at $${last.implied_value_usd.toLocaleString('en-US')}`
   );
 }
+
+/**
+ * Worked examples, from the sealed snapshot this entry was built on.
+ *
+ * These are not test fixtures and they are not asserted anywhere:
+ * they are a hand-check a reader can do with a calculator, from the
+ * snapshot figures alone, to see that the model does what its
+ * formula says it does. The numbers below are the snapshot's own
+ * figures at 2026-11-14; a different snapshot would give different
+ * numbers, and the formula, not these examples, is the model.
+ *
+ * Steakhouse Financial, rank 1:
+ *   TVL $2,753,981,495, change_7d -2.1935%, age 543 days, 11 chains.
+ *   base = 2,753,981,495 x 0.30 = 826,194,449, roughly.
+ *   growth = 1 + (-2.1935 / 100) x 0.6 = 0.9868.
+ *   maturity = 0.55 + 0.45 x 543 / 730 = 0.8847.
+ *   breadth = 1 + 0.02 x min(10, 10) = 1.20, capped at ten extra chains.
+ *   implied = round(826,194,449 x 0.9868 x 0.8847 x 1.20) = $865,602,749.
+ *   That is the board's top row, and the largest implied value on it.
+ *
+ * Gauntlet, rank 2:
+ *   TVL $1,577,685,462, change_7d +5.645%, age 543 days, 14 chains.
+ *   base = 473,305,639, growth = 1.0339, maturity 0.8847,
+ *   breadth 1.20, implied $519,514,486.
+ *
+ * Veda, rank 3:
+ *   TVL $1,563,415,482, change_7d -8.2898%, age 632 days, 13 chains.
+ *   base = 469,024,645, growth = 0.9503, maturity 0.9396,
+ *   breadth 1.20, implied $502,525,204.
+ *
+ * A small protocol, rank 178 (Monarq, the last row):
+ *   TVL $5,132,234, change_7d -18.5227%, age 67 days, 1 chain.
+ *   base = 1,539,670, growth = 0.8889, maturity 0.5913,
+ *   breadth 1.00, implied $809,230.
+ *   Its base is small, its maturity is near the floor of 0.55,
+ *   and its breadth is 1.00, so its implied value is the smallest on
+ *   the board, and it is still ranked: the board has no cut, so the
+ *   last row is a real row, not a placeholder.
+ *
+ * The clamp, worked: one rankable protocol grew 4,448% in seven days.
+ *   Unclamped, its growth multiplier would be 1 + 44.48 x 0.6 = 27.688,
+ *   and it would outrank the whole board on one week. Clamped to 100%,
+ *   its multiplier is 1.60, and it ranks on its TVL and age like
+ *   every other row. That is the clamp doing its job.
+ */
