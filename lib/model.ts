@@ -34,6 +34,21 @@
 // and chain count is how widely that value is distributed. The growth
 // clamp matters: one rankable protocol grew 4,448% in seven days, and
 // without the clamp it would outrank the whole board on one week.
+//
+// Why 0.30, 0.6, 0.55 and 0.02? They are deliberately conservative:
+// the base multiple keeps the implied value well below the TVL it is
+// derived from, the growth weight keeps one good week from deciding
+// the board, the maturity floor keeps a young protocol from scoring
+// zero, and the breadth step is small enough that being on ten chains
+// is worth at most 20%. No single input can dominate the ranking, and
+// every multiplier is shown per row in board.json, so a reader can
+// recompute any row from the snapshot alone.
+//
+// Reproducibility note: this file is the whole model. main.ts calls
+// buildRadar() here, the dashboard renders the rows it returns, and
+// board.json is the same rows serialised. Change the constants in
+// MODEL below and the whole board, dashboard and dossier change
+// together; change nothing else and a rebuild is byte-identical.
 
 /** The snapshot's protocol entry: exactly the ten fields the sealed input carries. */
 export interface SnapshotProtocol {
@@ -194,20 +209,31 @@ export function ageDays(asOf: string, listedAt: string | null): number | null {
   return Math.max(0, Math.floor((a - b) / DAY_MS));
 }
 
-/** The four multipliers and the implied value one protocol gets under `model`. */
+/** The four multipliers and the implied value one protocol gets under `model`.
+ *
+ * Every input is clamped before it is used, so a single extreme week
+ * (the snapshot's largest is +4,448%) or a protocol with no listed date
+ * cannot decide the board on its own. The result is always a positive
+ * whole dollar amount, and every multiplier is returned alongside it so
+ * board.json can show the reader exactly how a row was scored.
+ */
 export function impliedValue(
   protocol: SnapshotProtocol,
   asOf: string,
   model: ModelConstants,
 ): { implied: number; growthPct: number; growthMult: number; maturityMult: number; breadthMult: number; age: number | null } {
   const age = ageDays(asOf, protocol.listed_at);
+  // Unreported seven-day change counts as flat: no growth, no penalty.
   const rawGrowth = finite(protocol.change_7d, 0);
   const growthPct = Math.min(model.growth_cap, Math.max(model.growth_floor, rawGrowth));
   const growthMult = 1 + (growthPct / 100) * model.growth_weight;
+  // Age unknown counts as one year: old enough to be real, young enough
+  // to leave room for a protocol with a longer recorded run.
   const ageForModel = age ?? model.unknown_age_days;
   const maturityMult =
     model.maturity_floor +
     (Math.min(Math.max(ageForModel, 0), model.maturity_days) / model.maturity_days) * model.maturity_range;
+  // Breadth is capped: ten extra chains is the most that can count.
   const extraChains = Math.min(Math.max(protocol.chains.length - 1, 0), model.breadth_cap_chains);
   const breadthMult = 1 + extraChains * model.breadth_per_chain;
   const base = protocol.tvl_usd * model.base_multiple;
@@ -255,7 +281,15 @@ function bySlug(protocols: SnapshotProtocol[]): Map<string, SnapshotProtocol> {
   return new Map(protocols.map((p) => [p.slug, p]));
 }
 
-/** The protocols the board ranks, strongest first, with ranks 1..n. */
+/** The protocols the board ranks, strongest first, with ranks 1..n.
+ *
+ * Selection is two passes, both rule-based and neither by name:
+ * first the watchlist, every slug it names, then every other rankable
+ * protocol below the floor, largest TVL first so the set is complete
+ * before scoring. Scoring then sorts by implied value alone, with the
+ * slug as a deterministic tie-break, so the same snapshot always
+ * produces the same board in the same order.
+ */
 export function buildBoard(snapshot: Snapshot, model: ModelConstants = MODEL): BoardRow[] {
   const index = bySlug(snapshot.protocols);
   const chosen = new Map<string, SnapshotProtocol>();
@@ -278,6 +312,8 @@ export function buildBoard(snapshot: Snapshot, model: ModelConstants = MODEL): B
     const { implied, growthPct, growthMult, maturityMult, breadthMult, age } = impliedValue(p, snapshot.as_of, model);
     return { p, implied, growthPct, growthMult, maturityMult, breadthMult, age };
   });
+  // Implied value first, slug second: a tie is decided the same way
+  // on every run, and the ranks that follow are 1..n with no gaps.
   scored.sort((a, b) => b.implied - a.implied || (a.p.slug < b.p.slug ? -1 : a.p.slug > b.p.slug ? 1 : 0));
   return scored.map((s, i) => ({
     rank: i + 1,
@@ -360,6 +396,13 @@ function actionFor(p: SnapshotProtocol, capital: number, chain: string): string 
  * TVL, age), never from a hand-written list of names. Step 2 comes before
  * any deposit on purpose: the points page is checked first, so a fake
  * airdrop site found through search never gets the funds.
+ *
+ * The amounts are deliberately small and explicit: the capital is a
+ * fraction of the protocol's TVL tier, the gas figures are the cost of
+ * one transaction on the protocol's own chain, and the hold is longer
+ * for younger protocols, whose qualifying window is usually longer.
+ * Nothing here promises a token, a date, or a reward: the steps are
+ * what a reader would do to be counted if a launch ever happens.
  */
 export function farmSteps(p: SnapshotProtocol, age: number | null): FarmStep[] {
   const chain = chainOf(p);

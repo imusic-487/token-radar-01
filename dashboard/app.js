@@ -2,6 +2,14 @@
 // dashboard/ by main.ts) and renders the ranked board, a filterable table,
 // and a per-protocol detail drawer with the model's own inputs and the
 // protocol's farm plan. No network: every byte it shows is in data.js.
+//
+// The page is a second implementation of the same model, on purpose:
+// impliedOf() below recomputes a row from the snapshot figures and the
+// detail drawer checks it against the number board.json carries, so a
+// reader can see the page and the board are the same arithmetic. The
+// farm plan is the same derivation main.ts writes to board.json, too:
+// category, chains, TVL and age decide the action, the capital, the hold
+// and every cost and time. No name is special-cased anywhere in this file.
 (function () {
   'use strict';
 
@@ -30,6 +38,10 @@
   // The model in one function (radar-2): the page recomputes a row from the
   // snapshot figures and checks the number board.json carries, so the
   // page's code and the board's data are visibly the same arithmetic.
+  // Growth is clamped before it is used, age unknown counts as one
+  // year, and breadth is capped at ten extra chains, exactly as in
+  // lib/model.ts. If this recomputation ever differs from the board,
+  // the detail drawer says so in plain words: the data would be stale.
   function impliedOf(row, model) {
     var growth = Math.min(model.growth_cap, Math.max(model.growth_floor, row.change_7d === null || row.change_7d === undefined ? 0 : row.change_7d));
     var growthMult = 1 + (growth / 100) * model.growth_weight;
